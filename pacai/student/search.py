@@ -14,50 +14,94 @@ def depthFirstSearch(problem):
     
  
     """
-    w = Directions.WEST
+
     dirs = {'North': Directions.NORTH, 
             'East': Directions.EAST, 
             'South': Directions.SOUTH,
             'West': Directions.WEST} 
     # *** Your Code Here ***
-    path = problem.successorStates(problem.startingState())
+    stack = [[pos, [direction]] for pos, direction, weight in problem.successorStates(problem.startingState())]
     #while goal not found and stack not empty
-
     visited = [problem.startingState()]
-    print(visited)
-    
-    while len(path) > 0:
-        node = path.pop()
-        visited.append(node[0])
-       
-        if problem.isGoal(node[0]):
-            print("found")
-            break
-        for successor in problem.successorStates(node[0]):
-            if not (successor[0] in visited):
-                path.append(successor)
-     
-    return [dirs[tup[1]] for tup in path]
 
-    #print([successor for successor in problem.successorStates(problem.startingState())])
-    #print("Start:", problem.startingState())
-    #print("Is the start a goal?: %s" % (problem.isGoal(problem.startingState())))
-    #print("Start's successors: %s" % (problem.successorStates(problem.startingState())))
-       
-    #raise NotImplementedError()
-    return [] 
+    while len(stack) > 0:
+        
+        n_pos, ls = stack.pop()
+
+        visited.append(n_pos) 
+        if problem.isGoal(n_pos):
+            return [dirs[x] for x in ls] 
+        for pos, direction, weight in problem.successorStates(n_pos):
+            if not (pos in visited):
+                sh_copy = ls.copy() 
+                sh_copy.append(direction)
+                stack.append([pos, sh_copy])
+    return []
+
+
+
 def breadthFirstSearch(problem):
     """
     Search the shallowest nodes in the search tree first. [p 81]
     """
 
     # *** Your Code Here ***
-    raise NotImplementedError()
+    dirs = {'North': Directions.NORTH, 
+            'East': Directions.EAST, 
+            'South': Directions.SOUTH,
+            'West': Directions.WEST} 
+    # *** Your Code Here ***
+    stack = [[pos, [direction]] for pos, direction, weight in problem.successorStates(problem.startingState())]
+    #while goal not found and stack not empty
+    visited = [problem.startingState()]
+
+    while len(stack) > 0:
+        
+        n_pos, ls = stack.pop(0)
+
+        visited.append(n_pos) 
+        if problem.isGoal(n_pos):
+            return [dirs[x] for x in ls] 
+        for pos, direction, weight in problem.successorStates(n_pos):
+            if not (pos in visited):
+                sh_copy = ls.copy() 
+                sh_copy.append(direction)
+                stack.append([pos, sh_copy])
+    return []
+
+
 
 def uniformCostSearch(problem):
     """
     Search the node of least total cost first.
     """
+    dirs = {'North': Directions.NORTH, 
+            'East': Directions.EAST, 
+            'South': Directions.SOUTH,
+            'West': Directions.WEST} 
+    # *** Your Code Here ***
+    stack = [[pos, [direction], cost] for pos, direction, cost in problem.successorStates(problem.startingState())]
+    stack.sort(key = lambda x: x[2])
+    #while goal not found and stack not empty
+    visited = [problem.startingState()]
+
+    while len(stack) > 0:
+        
+        n_pos, ls, n_cost = stack.pop(0)
+
+        visited.append(n_pos) 
+        if problem.isGoal(n_pos):
+            return [dirs[x] for x in ls] 
+        sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2] )
+        print( sorted_successors)
+        for pos, direction, cost in sorted_successors:
+            if not (pos in visited):
+                sh_copy = ls.copy() 
+                sh_copy.append(direction)
+                stack.append([pos, sh_copy, n_cost + cost])
+                stack.sort(key = lambda x: x[2])
+    return []
+
 
     # *** Your Code Here ***
     raise NotImplementedError()
