@@ -77,25 +77,25 @@ def uniformCostSearch(problem):
     """    # *** Your Code Here ***
     
     stack = [[pos, [direction], cost] for pos, direction, cost in problem.successorStates(problem.startingState())]
-    stack.sort(key = lambda x: x[2])
     #while goal not found and stack not empty
-    visited = [problem.startingState()]
+    visited = {problem.startingState(): 0}
 
     while len(stack) > 0:
-         
+        stack.sort(key = lambda x: x[2])
+      
         n_pos, ls, n_cost = stack.pop(0)
 
-        visited.append(n_pos) 
+        visited[n_pos] = problem.actionsCost(ls) 
         if problem.isGoal(n_pos):
             return ls 
-        sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2] )
-        print( sorted_successors)
-        for pos, direction, cost in sorted_successors:
-            if not (pos in visited):
+        #sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2] )
+
+        for pos, direction, cost in problem.successorStates(n_pos):
+            if not (pos in visited) or problem.actionsCost(ls + [direction]) < visited[pos]:
                 sh_copy = ls.copy() 
                 sh_copy.append(direction)
-                stack.append([pos, sh_copy, n_cost + cost])
-                stack.sort(key = lambda x: x[2])
+                stack.append([pos, sh_copy, problem.actionsCost(sh_copy)])
+
     return []
 
 
