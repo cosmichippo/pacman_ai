@@ -74,24 +74,20 @@ def breadthFirstSearch(problem):
 def uniformCostSearch(problem):
     """
     Search the node of least total cost first.
-    """
-    dirs = {'North': Directions.NORTH, 
-            'East': Directions.EAST, 
-            'South': Directions.SOUTH,
-            'West': Directions.WEST} 
-    # *** Your Code Here ***
+    """    # *** Your Code Here ***
+    
     stack = [[pos, [direction], cost] for pos, direction, cost in problem.successorStates(problem.startingState())]
     stack.sort(key = lambda x: x[2])
     #while goal not found and stack not empty
     visited = [problem.startingState()]
 
     while len(stack) > 0:
-        
+         
         n_pos, ls, n_cost = stack.pop(0)
 
         visited.append(n_pos) 
         if problem.isGoal(n_pos):
-            return [dirs[x] for x in ls] 
+            return ls 
         sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2] )
         print( sorted_successors)
         for pos, direction, cost in sorted_successors:
@@ -113,3 +109,16 @@ def aStarSearch(problem, heuristic):
 
     # *** Your Code Here ***
     raise NotImplementedError()
+
+
+def tinyMazeSearch(problem):
+    """
+    Returns a sequence of moves that solves `tinyMaze`.
+    For any other maze, the sequence of moves will be incorrect,
+    so only use this for `tinyMaze`.
+    """
+    #print(problem.getsuccessors(problem.startState()))
+    s = Directions.SOUTH
+    w = Directions.WEST
+
+    return ['South', 'South', w, s, w, w, s, w]
