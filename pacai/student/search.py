@@ -15,10 +15,6 @@ def depthFirstSearch(problem):
  
     """
 
-    dirs = {'North': Directions.NORTH, 
-            'East': Directions.EAST, 
-            'South': Directions.SOUTH,
-            'West': Directions.WEST} 
     # *** Your Code Here ***
     stack = [[pos, [direction]] for pos, direction, weight in problem.successorStates(problem.startingState())]
     #while goal not found and stack not empty
@@ -30,7 +26,7 @@ def depthFirstSearch(problem):
 
         visited.append(n_pos) 
         if problem.isGoal(n_pos):
-            return [dirs[x] for x in ls] 
+            return ls 
         for pos, direction, weight in problem.successorStates(n_pos):
             if not (pos in visited):
                 sh_copy = ls.copy() 
@@ -46,10 +42,6 @@ def breadthFirstSearch(problem):
     """
 
     # *** Your Code Here ***
-    dirs = {'North': Directions.NORTH, 
-            'East': Directions.EAST, 
-            'South': Directions.SOUTH,
-            'West': Directions.WEST} 
     # *** Your Code Here ***
     stack = [[pos, [direction]] for pos, direction, weight in problem.successorStates(problem.startingState())]
     #while goal not found and stack not empty
@@ -61,7 +53,7 @@ def breadthFirstSearch(problem):
 
         visited.append(n_pos) 
         if problem.isGoal(n_pos):
-            return [dirs[x] for x in ls] 
+            return ls
         for pos, direction, weight in problem.successorStates(n_pos):
             if not (pos in visited):
                 sh_copy = ls.copy() 
@@ -88,9 +80,9 @@ def uniformCostSearch(problem):
         visited[n_pos] = problem.actionsCost(ls) 
         if problem.isGoal(n_pos):
             return ls 
-        #sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2] )
+        sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2] )
 
-        for pos, direction, cost in problem.successorStates(n_pos):
+        for pos, direction, cost in sorted_successors: #problem.successorStates(n_pos):
             if not (pos in visited) or problem.actionsCost(ls + [direction]) < visited[pos]:
                 sh_copy = ls.copy() 
                 sh_copy.append(direction)
@@ -106,19 +98,30 @@ def aStarSearch(problem, heuristic):
     """
     Search the node that has the lowest combined cost and heuristic first.
     """
+    
+
+    stack = [[pos, [direction], cost] for pos, direction, cost in problem.successorStates(problem.startingState())]
+    #while goal not found and stack not empty
+    visited = {problem.startingState(): 0}
+
+    while len(stack) > 0:
+        stack.sort(key = lambda x: problem.actionsCost(x[1]) + heuristic(x[0], problem) )
+      
+        n_pos, ls, n_cost = stack.pop(0)
+
+        visited[n_pos] = problem.actionsCost(ls) 
+        if problem.isGoal(n_pos):
+            return ls 
+        #sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: problem.actionsCost(x[1]) + heuristic.manhattan(x[0], problem) )
+
+        for pos, direction, cost in problem.successorStates(n_pos):
+            if not (pos in visited) or problem.actionsCost(ls + [direction]) < visited[pos]:
+                sh_copy = ls.copy() 
+                sh_copy.append(direction)
+                stack.append([pos, sh_copy, problem.actionsCost(sh_copy)])
+
+    return []
 
     # *** Your Code Here ***
     raise NotImplementedError()
 
-
-def tinyMazeSearch(problem):
-    """
-    Returns a sequence of moves that solves `tinyMaze`.
-    For any other maze, the sequence of moves will be incorrect,
-    so only use this for `tinyMaze`.
-    """
-    #print(problem.getsuccessors(problem.startState()))
-    s = Directions.SOUTH
-    w = Directions.WEST
-
-    return ['South', 'South', w, s, w, w, s, w]
