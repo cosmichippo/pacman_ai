@@ -13,6 +13,7 @@ from pacai.core.search.position import PositionSearchProblem
 from pacai.core.search.problem import SearchProblem
 from pacai.agents.base import BaseAgent
 from pacai.agents.search.base import SearchAgent
+from pacai.core.directions import Directions
 
 class CornersProblem(SearchProblem):
     """
@@ -55,6 +56,7 @@ class CornersProblem(SearchProblem):
 
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
+        print(self.startingPosition)
         top = self.walls.getHeight() - 2
         right = self.walls.getWidth() - 2
 
@@ -64,8 +66,8 @@ class CornersProblem(SearchProblem):
                 logging.warning('Warning: no food in corner ' + str(corner))
 
         # *** Your Code Here ***
-        raise NotImplementedError()
-
+        #raise NotImplementedError()
+        self.corner_flags = [0, 0, 0, 0]
     def actionsCost(self, actions):
         """
         Returns the cost of a particular sequence of actions.
@@ -84,7 +86,46 @@ class CornersProblem(SearchProblem):
                 return 999999
 
         return len(actions)
+    
+    def isGoal(self, position):
+        """
+        Returns true if the position of the state is a goal state
+        """
 
+# have something that keeps track of 
+        if position in self.corners:
+            print("position", position)
+
+            return 1
+        return 0
+    
+    def startingState(self):
+        return self.startingPosition
+
+    def successorStates(self, coord):
+        successors = []
+
+        for action in Directions.CARDINAL:
+            print("pos provided," , coord )
+            x, y = coord
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+
+            if (not hitsWall):
+                # a new state has to be constructed, where the state is composed of pos, direction, cost to get from our old state to our new state.
+                # (note, state doesn't have a global cost in relationship to everything else? or does it? ie, is it
+                # s 3 2
+                # 3 2 1
+                # 2 1 G 
+                # Construct the successor.
+                # new_state = ((nextx, nexty, cost. where does cost come from? is it determined by the heuristic? doesn't seem so, in the previous problems, the cost has been pre-generated i think. )
+                # though clearly it hasn't been. it must not be, if the successorstates function 
+                successors.append([(nextx, nexty), action, 1]) #update with some cost? 
+
+        return successors
+
+        
 def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -94,13 +135,13 @@ def cornersHeuristic(state, problem):
     i.e. it should be admissible.
     (You need not worry about consistency for this heuristic to receive full credit.)
     """
-
+    # State = (pos, direction, cost)
     # Useful information.
     # corners = problem.corners  # These are the corner coordinates
     # walls = problem.walls  # These are the walls of the maze, as a Grid.
 
     # *** Your Code Here ***
-    return heuristic.null(state, problem)  # Default to trivial solution
+    return heuristic.manhattan(state, problem)  # Default to trivial solution
 
 def foodHeuristic(state, problem):
     """
@@ -135,6 +176,7 @@ def foodHeuristic(state, problem):
 
     # *** Your Code Here ***
     return heuristic.null(state, problem)  # Default to the null heuristic.
+
 
 class ClosestDotSearchAgent(SearchAgent):
     """
