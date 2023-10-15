@@ -14,6 +14,7 @@ from pacai.core.search.problem import SearchProblem
 from pacai.agents.base import BaseAgent
 from pacai.agents.search.base import SearchAgent
 from pacai.core.directions import Directions
+from pacai.core import distance
 
 class CornersProblem(SearchProblem):
     """
@@ -56,7 +57,7 @@ class CornersProblem(SearchProblem):
 
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
-        print(self.startingPosition)
+
         top = self.walls.getHeight() - 2
         right = self.walls.getWidth() - 2
 
@@ -66,8 +67,13 @@ class CornersProblem(SearchProblem):
                 logging.warning('Warning: no food in corner ' + str(corner))
 
         # *** Your Code Here ***
+        self._numExpanded = 0 
+        self._visitedLocations = set()
+        self._visitHistory = []
+
         #raise NotImplementedError()
-        self.corner_flags = [0, 0, 0, 0]
+
+
     def actionsCost(self, actions):
         """
         Returns the cost of a particular sequence of actions.
@@ -87,45 +93,45 @@ class CornersProblem(SearchProblem):
 
         return len(actions)
     
-    def isGoal(self, position):
+    def isGoal(self, state):
         """
         Returns true if the position of the state is a goal state
         """
-
-# have something that keeps track of 
-        if position in self.corners:
-            print("position", position)
-
+        summed_vals = 4
+        
+        if sum(state[1]) == summed_vals:
             return 1
         return 0
     
     def startingState(self):
-        return self.startingPosition
+        return (self.startingPosition, (0,0,0,0))
 
-    def successorStates(self, coord):
+    def successorStates(self, state):
         successors = []
 
         for action in Directions.CARDINAL:
-            print("pos provided," , coord )
-            x, y = coord
+
+            x, y = state[0] # coords
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
             hitsWall = self.walls[nextx][nexty]
 
             if (not hitsWall):
-                # a new state has to be constructed, where the state is composed of pos, direction, cost to get from our old state to our new state.
-                # (note, state doesn't have a global cost in relationship to everything else? or does it? ie, is it
-                # s 3 2
-                # 3 2 1
-                # 2 1 G 
-                # Construct the successor.
-                # new_state = ((nextx, nexty, cost. where does cost come from? is it determined by the heuristic? doesn't seem so, in the previous problems, the cost has been pre-generated i think. )
-                # though clearly it hasn't been. it must not be, if the successorstates function 
-                successors.append([(nextx, nexty), action, 1]) #update with some cost? 
+                foo = state[1]
+                for i in range(len(self.corners)):
+                    if (nextx, nexty) == self.corners[i]:
+                        foo = list(foo)
+                        foo[i] = 1 
+                        foo = tuple(foo)
+                successors.append([((nextx, nexty), foo), action, 1]) #update with some cost? 
+        self._numExpanded += 1
 
         return successors
+    
+    def getExpandedCount(self):
+        return self._numExpanded
 
-        
+
 def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
@@ -135,13 +141,21 @@ def cornersHeuristic(state, problem):
     i.e. it should be admissible.
     (You need not worry about consistency for this heuristic to receive full credit.)
     """
-    # State = (pos, direction, cost)
+    # State = (pos, state_of_corners)
     # Useful information.
     # corners = problem.corners  # These are the corner coordinates
     # walls = problem.walls  # These are the walls of the maze, as a Grid.
 
     # *** Your Code Here ***
-    return heuristic.manhattan(state, problem)  # Default to trivial solution
+    # maybe try just giving the distance to the furthest away node
+    # here's one: since we know the state of the nodes, we can take the nodes that haven't been found, and 
+    # find the closest one using manhattan distance, and use that as the heuristic. 
+    distance1, checked_corners = state
+    unchecked_corners = [(problem.corners[i], distance.manhattan(distance1, problem.corners[i]))for i in range(len(checked_corners)) if checked_corners[i] == 0]
+    unchecked_corners.sort(key =lambda x: x[1])
+    closest_corner = unchecked_corners.pop()
+    return closest_corner[1]
+
 
 def foodHeuristic(state, problem):
     """
