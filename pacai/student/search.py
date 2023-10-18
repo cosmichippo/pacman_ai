@@ -3,6 +3,7 @@ In this file, you will implement generic search algorithms which are called by P
 """
 
 from pacai.util.queue import Queue
+from pacai.util.priorityQueue import PriorityQueue as PQ
 
 def depthFirstSearch(problem):
     """
@@ -65,38 +66,39 @@ def breadthFirstSearch(problem):
                 path2 = path.copy()
                 path2.append(direction)
                 queue.push((state, path2))
-                print(queue)
+                #print(queue)
     return []
 
 
 def uniformCostSearch(problem):
-    """
-    Search the node of least total cost first.
-    """    # *** Your Code Here ***
 
-    stack = [[p, [d], w] for p, d, w in problem.successorStates(problem.startingState())]
+    #Search the node of least total cost first.
+       # *** Your Code Here ***
+
+    #stack = [[p, [d], w] for p, d, w in problem.successorStates(problem.startingState())]
+    stack = [(problem.startingState(), [], 0)]
 # while goal not found and stack not empty
-    visited = {problem.startingState(): 0}
+    visited = {}
 
     while len(stack) > 0:
         stack.sort(key = lambda x: x[2])
 
         n_pos, ls, n_cost = stack.pop(0)
 
-        visited[n_pos] = problem.actionsCost(ls)
         if problem.isGoal(n_pos):
             return ls
-        sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2])
 
-        for pos, direction, cost in sorted_successors:
-            if not (pos in visited) or problem.actionsCost(ls + [direction]) < visited[pos]:
-                sh_copy = ls.copy()
-                sh_copy.append(direction)
-                stack.append([pos, sh_copy, problem.actionsCost(sh_copy)])
+        if not (n_pos in visited) or problem.actionsCost(ls) < visited[n_pos]:
+            visited[n_pos] = n_cost # problem.actionsCost(ls)
+
+            # sorted_successors = sorted(problem.successorStates(n_pos), key = lambda x: x[2])
+
+            for pos, direction, cost in problem.successorStates(n_pos):
+                    sh_copy = ls.copy()
+                    sh_copy.append(direction)
+                    stack.append([pos, sh_copy, n_cost + cost])
     return []
 
-    # *** Your Code Here ***
-    raise NotImplementedError()
 
 
 def aStarSearch(problem, heuristic):
@@ -117,6 +119,7 @@ def aStarSearch(problem, heuristic):
 
         parentState, ls, n_cost, p_h = pq.pop(0) # pop front of pq
 
+
         if problem.isGoal(parentState):
             return ls
 
@@ -126,8 +129,8 @@ def aStarSearch(problem, heuristic):
                 #if not (state in visited) or problem.actionsCost(ls + [direction]) < visited[state]:
                 sh_copy = ls.copy()
                 sh_copy.append(direction)
-                sortedVal = problem.actionsCost(sh_copy) + heuristic(state, problem)
-                pq.append((state, sh_copy, problem.actionsCost(sh_copy), sortedVal)) # 
+                sortedVal = n_cost + cost + heuristic(state, problem)
+                pq.append((state, sh_copy, n_cost + cost, sortedVal)) # 
 
     return []
 

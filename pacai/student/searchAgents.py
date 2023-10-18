@@ -97,16 +97,16 @@ class CornersProblem(SearchProblem):
         """
         summed_vals = 4 
         # (() (0,0,0,0) 
+
         if False not in state[1]:
             return True
         return False 
     
     def startingState(self):
-        return (self.startingPosition, (False,False,False,False))
+        return (self.startingPosition, (False,False,False,False)) # startingPos, states, lastReferencePos
 
     def successorStates(self, state):
         self._numExpanded += 1
-
 
         successors = []
 
@@ -119,13 +119,22 @@ class CornersProblem(SearchProblem):
 
             if (not hitsWall):
                 corners = state[1]
+               
                 for index, position in enumerate(self.corners): 
                     if (nextx, nexty) == position:
                         corners = list(corners)
                         corners[index] = True 
                         corners = tuple(corners)
-                successors.append((((nextx, nexty), corners), action, 1)) #update with some cost? 
-        
+                         
+                successors.append((((nextx, nexty), corners), action, 1)) #update with some cost
+                #yield (((nextx, nexty), corners), action, 1)
+
+        if (state not in self._visitedLocations):
+            self._visitedLocations.add(state)
+            # Note: visit history requires coordinates not states. In this situation
+            # they are equivalent.
+            coordinates = state[0]
+            self._visitHistory.append(coordinates) 
         return successors
  
     def getExpandedCount(self):
@@ -152,14 +161,18 @@ def cornersHeuristic(state, problem):
     # find the closest one using manhattan distance, and use that as the heuristic. 
     distance1, checked_corners = state
     v = [] 
+    if False not in checked_corners:
+        return 0
+    
+    
     for index in range(len(checked_corners)):
         if not checked_corners[index]: # if corner not yet found
             v.append((problem.corners[index], distance.manhattan(distance1, problem.corners[index])))
     v.sort(key = lambda x:x[1])
-    if len(v) == 0:
-        return 0
+    # if len(v) == 0:
+    #    return 0
 
-    corner, distance2 = v.pop(0)
+    corner, distance2 = v.pop()
     return distance2
 
 def foodHeuristic(state, problem):
@@ -194,7 +207,7 @@ def foodHeuristic(state, problem):
     position, foodGrid = state
 
     # *** Your Code Here ***
-    return heuristic.null(state, problem)  # Default to the null heuristic.
+    return heuristic.manhattan(state, problem)  # Default to the null heuristic.
 
 
 class ClosestDotSearchAgent(SearchAgent):
