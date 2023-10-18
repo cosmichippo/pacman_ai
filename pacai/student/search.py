@@ -1,6 +1,9 @@
 """
 In this file, you will implement generic search algorithms which are called by Pacman agents.
 """
+
+from pacai.util.queue import Queue
+
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first [p 85].
@@ -40,25 +43,29 @@ def breadthFirstSearch(problem):
     Search the shallowest nodes in the search tree first. [p 81]
     """
 # *** Your Code Here ***
-    queue = [[p, [d], w] for p, d, w in problem.successorStates(problem.startingState())]
+    #queue = [(problem.startingState(), [])  ]
+    queue = Queue()
+    queue.push((problem.startingState(), []))
     # print(problem.successorStates(problem.startingState()))
-# while goal not found and stack not empty
-    visited = {problem.startingState()}
+# while goal not found and stack not empt,y
+    visited = set() 
 
     while len(queue) > 0:
 
-        p_state, path, cost = queue.pop(0)
-        #print("test")
+        p_state, path = queue.pop()
+
         if problem.isGoal(p_state):
             return path 
-        visited.add(p_state)
+       
         # what do i think is happening?
         # i think bfs is propagating to the edges and stopping once it has found the 
-        for state, direction, cost in problem.successorStates(p_state):
-            if not (state in visited):
+        if not (p_state in visited):
+            visited.add(p_state) 
+            for state, direction, cost in problem.successorStates(p_state):
                 path2 = path.copy()
                 path2.append(direction)
-                queue.append([state, path2, cost + 1])
+                queue.push((state, path2))
+                print(queue)
     return []
 
 
@@ -96,27 +103,35 @@ def aStarSearch(problem, heuristic):
     """
     Search the node that has the lowest combined cost and heuristic first.
     """
-
-    pq = [[p, [d], w] for p, d, w in problem.successorStates(problem.startingState())]
-    visited = {problem.startingState(): 0}
+    # PQ = PriorityQueueWithFunction(evaluate)
+    pq = [(problem.startingState(),[], 0, 0)]
+    visited = {}
 
     while len(pq) > 0:
-        pq.sort(key = lambda x: problem.actionsCost(x[1]) + heuristic(x[0], problem))
+        pq.sort(key = lambda x: x[3])
+        # this is slow because it regenerates the cost of each value each time 
+        # instead of saving it as a value of the node
+        # use a node function, tell pq to sort by node value
         # sort priorityQueue by cost to get to location, cost of heuristic (A* search)
+        # idea; every node in the frontier has been visited. use visited to figure out cost?
 
-        n_pos, ls, n_cost = pq.pop(0) # pop front of pq
+        parentState, ls, n_cost, p_h = pq.pop(0) # pop front of pq
 
-        visited[n_pos] = problem.actionsCost(ls)
-        if problem.isGoal(n_pos):
+        if problem.isGoal(parentState):
             return ls
 
-        for pos, direction, cost in problem.successorStates(n_pos):
-            if not (pos in visited) or problem.actionsCost(ls + [direction]) < visited[pos]:
+        if not (parentState in visited) or n_cost < visited[parentState]:
+            visited[parentState] = problem.actionsCost(ls)
+            for state, direction, cost in problem.successorStates(parentState):
+                #if not (state in visited) or problem.actionsCost(ls + [direction]) < visited[state]:
                 sh_copy = ls.copy()
                 sh_copy.append(direction)
-                pq.append([pos, sh_copy, problem.actionsCost(sh_copy)])
+                sortedVal = problem.actionsCost(sh_copy) + heuristic(state, problem)
+                pq.append((state, sh_copy, problem.actionsCost(sh_copy), sortedVal)) # 
 
     return []
 
     # *** Your Code Here ***
     raise NotImplementedError()
+
+

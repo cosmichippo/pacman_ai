@@ -67,9 +67,7 @@ class CornersProblem(SearchProblem):
                 logging.warning('Warning: no food in corner ' + str(corner))
 
         # *** Your Code Here ***
-        self._numExpanded = 0 
-        self._visitedLocations = set()
-        self._visitHistory = []
+
 
         #raise NotImplementedError()
 
@@ -89,7 +87,7 @@ class CornersProblem(SearchProblem):
             dx, dy = Actions.directionToVector(action)
             x, y = int(x + dx), int(y + dy)
             if self.walls[x][y]:
-                return 999999
+                return 999999 
 
         return len(actions)
     
@@ -97,16 +95,19 @@ class CornersProblem(SearchProblem):
         """
         Returns true if the position of the state is a goal state
         """
-        summed_vals = 4
-        
-        if sum(state[1]) == summed_vals:
-            return 1
-        return 0
+        summed_vals = 4 
+        # (() (0,0,0,0) 
+        if False not in state[1]:
+            return True
+        return False 
     
     def startingState(self):
-        return (self.startingPosition, (0,0,0,0))
+        return (self.startingPosition, (False,False,False,False))
 
     def successorStates(self, state):
+        self._numExpanded += 1
+
+
         successors = []
 
         for action in Directions.CARDINAL:
@@ -114,20 +115,19 @@ class CornersProblem(SearchProblem):
             x, y = state[0] # coords
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
-            hitsWall = self.walls[nextx][nexty]
+            hitsWall = self.walls[nextx][nexty] 
 
             if (not hitsWall):
-                foo = state[1]
-                for i in range(len(self.corners)):
-                    if (nextx, nexty) == self.corners[i]:
-                        foo = list(foo)
-                        foo[i] = 1 
-                        foo = tuple(foo)
-                successors.append([((nextx, nexty), foo), action, 1]) #update with some cost? 
-        self._numExpanded += 1
-
+                corners = state[1]
+                for index, position in enumerate(self.corners): 
+                    if (nextx, nexty) == position:
+                        corners = list(corners)
+                        corners[index] = True 
+                        corners = tuple(corners)
+                successors.append((((nextx, nexty), corners), action, 1)) #update with some cost? 
+        
         return successors
-    
+ 
     def getExpandedCount(self):
         return self._numExpanded
 
@@ -151,11 +151,16 @@ def cornersHeuristic(state, problem):
     # here's one: since we know the state of the nodes, we can take the nodes that haven't been found, and 
     # find the closest one using manhattan distance, and use that as the heuristic. 
     distance1, checked_corners = state
-    unchecked_corners = [(problem.corners[i], distance.manhattan(distance1, problem.corners[i]))for i in range(len(checked_corners)) if checked_corners[i] == 0]
-    unchecked_corners.sort(key =lambda x: x[1])
-    closest_corner = unchecked_corners.pop()
-    return closest_corner[1]
+    v = [] 
+    for index in range(len(checked_corners)):
+        if not checked_corners[index]: # if corner not yet found
+            v.append((problem.corners[index], distance.manhattan(distance1, problem.corners[index])))
+    v.sort(key = lambda x:x[1])
+    if len(v) == 0:
+        return 0
 
+    corner, distance2 = v.pop(0)
+    return distance2
 
 def foodHeuristic(state, problem):
     """
