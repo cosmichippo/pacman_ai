@@ -1,8 +1,11 @@
 import random
-
+from pacai.core import distance 
 from pacai.agents.base import BaseAgent
 from pacai.agents.search.multiagent import MultiAgentSearchAgent
 
+from math import e 
+from math import tanh
+import random
 class ReflexAgent(BaseAgent):
     """
     A reflex agent chooses an action at each choice point by examining
@@ -15,6 +18,7 @@ class ReflexAgent(BaseAgent):
 
     def __init__(self, index, **kwargs):
         super().__init__(index, **kwargs)
+
 
     def getAction(self, gameState):
         """
@@ -29,7 +33,7 @@ class ReflexAgent(BaseAgent):
 
         # Collect legal moves.
         legalMoves = gameState.getLegalActions()
-
+         
         # Choose one of the best actions.
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
         bestScore = max(scores)
@@ -47,18 +51,72 @@ class ReflexAgent(BaseAgent):
         Make sure to understand the range of different values before you combine them
         in your evaluation function.
         """
-
-        successorGameState = currentGameState.generatePacmanSuccessor(action)
-
+        
+        
+        successorGameState = currentGameState.generatePacmanSuccessor(action) 
         # Useful information you can extract.
-        # newPosition = successorGameState.getPacmanPosition()
-        # oldFood = currentGameState.getFood()
-        # newGhostStates = successorGameState.getGhostStates()
-        # newScaredTimes = [ghostState.getScaredTimer() for ghostState in newGhostStates]
+        #print(type(successorGameState))
+        newPosition = successorGameState.getPacmanPosition()
+        oldFood = currentGameState.getFood()
+        newFood = successorGameState.getFood()  
+        
+        food = 0
 
+ 
+        ghostRange = 3 
+        foodRange = 10 
+        scoreRange = 100 
+
+        maxDistance = 0
+        minDistance = 10000
+        foodDistances = [] 
+        for y in range(len(oldFood._data)):
+            for data, x in enumerate(oldFood._data[y]):
+                if oldFood._data[y][x]:
+
+                    score = distance.maze((y, x), newPosition, successorGameState)
+                    if score >  maxDistance:
+                        maxDistance = score
+                    if score < minDistance:
+                        minDistance = score
+
+        newGhostStates = successorGameState.getGhostStates()
+        distance_from_ghosts = [distance.euclidean(ghost.getNearestPosition(), newPosition) for ghost in newGhostStates]
+        normGhostD = [self.normalize(distance, ghostRange) for distance in distance_from_ghosts]
+        normMinDist = self.normalize(minDistance, foodRange) 
+        
+        newScore = currentGameState.getScore()
+
+        normScoreChange = self.normalize(newScore, scoreRange)
+ 
+        # in order of importance
+        ghostWeight = 30  # summing up by 4
+        foodWeight = 5 
+        scoreWeight = 1 
+         
+        foodCost = int(foodWeight *self.normalize(minDistance, ghostRange ))#tanh(foodRange/(minDistance+0.1)))
+        scoreCost = scoreWeight * (successorGameState.getScore() )#- currentGameState.getScore()) 
+        ghostCost = int(ghostWeight * self.normalize(min(distance_from_ghosts) ,  ghostRange)) 
+        print(foodCost, scoreCost, ghostCost, "result:", foodCost+scoreCost - ghostCost)
+        
+        return foodCost + scoreCost - ghostCost
+        # +  ghostWeight * min(distance_from_ghosts) # + minDistance * foodWeight#int(ghostSum +  foodWeight * normMinDist )
+
+
+        #newScaredTimes = [ghostState.getScaredTimer() for ghostState in newGhostStates]
         # *** Your Code Here ***
 
-        return successorGameState.getScore()
+        #minGhostDist = min(distance_from_ghosts)
+
+    def normalize(self, val, weight):
+        # x > 0, y is between 1 and 0,
+        # x == 0, y == 1
+        # when weight is greater, the rate at which slope drops is decreased. . 
+        # weight = 5 gives 
+        w = -val/weight
+        return pow(e, w)
+
+
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -88,7 +146,62 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
 
     def __init__(self, index, **kwargs):
-        super().__init__(index, **kwargs)
+        super().__init__(index, **kwargs) 
+    
+    def getAction(self, state):
+        maxQ, maxAction = self.maximize(state) 
+        print("maxQ: ", maxQ, maxAction)
+        if maxAction != None:
+            return maxAction
+        print("shouldn't run")
+        return "Stop"
+        #print(state.generateSuccessor(0, state.getLegalActions(0)[0]))
+        # return "Stop" 
+
+    def minimize(self, state, depth, actor_index):
+
+        if self.getTreeDepth()  <= depth  or state.isWin() or state.isLose():
+            evaluate = self.getEvaluationFunction()
+            #print("evaluation", evaluate(state), "at depth", depth)
+            return (evaluate(state), None) 
+
+        minimal_quality = 999999 
+        minimizing_action = None
+        for action in state.getLegalActions(actor_index):
+            if action == "Stop":
+                pass
+            newState = state.generateSuccessor(actor_index, action)
+            quality = minimal_quality
+            if actor_index + 1 == state.getNumAgents():
+                quality, a2  = self.maximize(newState, depth + 1, 0)
+            else:
+                quality, a2 = self.minimize(newState, depth, actor_index + 1)
+            if quality < minimal_quality:
+                minimal_quality = quality
+                minimizing_action = action
+        # print("minimized_quality ", minimal_quality, "depth", depth, "agent", actor_index) 
+        return (minimal_quality, minimizing_action)
+ 
+    def maximize(self, state, depth=0, actor_index=0):
+        if self.getTreeDepth() <= depth or state.isLose() or state.isWin():
+            evaluate = self.getEvaluationFunction()
+            # print("OBSERVED", evaluate(state))
+            # print("evaluation", evaluate(state), "at depth", depth)
+
+            return (evaluate(state), None)
+        
+        maxQ = -999999
+        maxAction = None
+        for action in state.getLegalActions(actor_index):
+            if action == "Stop":
+                pass
+            newState = state.generateSuccessor(actor_index, action)
+            quality, a2 = self.minimize(newState, depth , actor_index + 1)
+            if quality > maxQ:
+                maxQ = quality
+                maxAction = action
+        #print("mazimized", maxQ, "at depth", depth)
+        return (maxQ, maxAction)
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -104,6 +217,76 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
     def __init__(self, index, **kwargs):
         super().__init__(index, **kwargs)
+    
+    def getAction(self, state):
+        maxQ, maxAction, a, b = self.maximize(state) 
+        print("maxQ: ", maxQ, maxAction)
+        if maxAction != None:
+            return maxAction
+        print("shouldn't run")
+        return "Stop"
+        #print(state.generateSuccessor(0, state.getLegalActions(0)[0]))
+        # return "Stop" 
+
+    def minimize(self, state, depth, actor_index, a = -999999, b = 999999):
+
+        minimal_quality = 999999 
+        alpha = a
+        beta = b 
+        minimizing_action = None
+
+        if self.getTreeDepth()  <= depth  or state.isWin() or state.isLose():
+            evaluate = self.getEvaluationFunction()
+            #print("evaluation", evaluate(state), "at depth", depth)
+            return (evaluate(state), None, alpha, beta) 
+
+        for action in state.getLegalActions(actor_index):
+            if action == "Stop":
+                pass
+            newState = state.generateSuccessor(actor_index, action)
+            quality = minimal_quality
+            if actor_index + 1 == state.getNumAgents():
+                quality, a2, a, b  = self.maximize(newState, depth + 1, 0)
+            else:
+                quality, a2, a, b = self.minimize(newState, depth, actor_index + 1)
+            if b < beta:
+                beta = b
+
+            if quality < minimal_quality:
+                minimal_quality = quality
+                minimizing_action = action
+
+            if alpha > beta:
+                break
+        # print("minimized_quality ", minimal_quality, "depth", depth, "agent", actor_index) 
+        return (minimal_quality, minimizing_action, alpha, beta)
+ 
+    def maximize(self, state, depth=0, actor_index=0, a = -999999, b = 999999):
+        if self.getTreeDepth() <= depth or state.isLose() or state.isWin():
+            evaluate = self.getEvaluationFunction()
+            # print("OBSERVED", evaluate(state))
+            # print("evaluation", evaluate(state), "at depth", depth)
+
+            return (evaluate(state), None, a, b)
+        
+        maxQ = -999999
+        alpha = a
+        beta = b
+        maxAction = None
+        for action in state.getLegalActions(actor_index):
+            if action == "Stop":
+                pass
+            newState = state.generateSuccessor(actor_index, action)
+            quality, a2, a, b = self.minimize(newState, depth , actor_index + 1)
+            if quality > maxQ:
+                maxQ = quality
+                maxAction = action
+            if a > alpha:
+                alpha = a
+            if alpha > beta:
+                break
+        #print("mazimized", maxQ, "at depth", depth)
+        return (maxQ, maxAction, alpha, beta)
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
